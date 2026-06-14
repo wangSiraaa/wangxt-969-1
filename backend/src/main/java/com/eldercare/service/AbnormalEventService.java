@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -27,9 +28,25 @@ public class AbnormalEventService {
     private final WorkOrderRepository workOrderRepository;
     private final AuditLogService auditLogService;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public AbnormalEvent createAbnormal(Long workOrderId, AbnormalType type,
                                         String description, String severity, boolean autoDetected) {
+        return doCreateAbnormal(workOrderId, null, null, null, null, type, description, severity, autoDetected);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public AbnormalEvent createAbnormalWithInfo(Long workOrderId, Long elderId, String elderName,
+                                                 Long nurseId, String nurseName,
+                                                 AbnormalType type, String description,
+                                                 String severity, boolean autoDetected) {
+        return doCreateAbnormal(workOrderId, elderId, elderName, nurseId, nurseName,
+                type, description, severity, autoDetected);
+    }
+
+    private AbnormalEvent doCreateAbnormal(Long workOrderId, Long elderId, String elderName,
+                                            Long nurseId, String nurseName,
+                                            AbnormalType type, String description,
+                                            String severity, boolean autoDetected) {
         WorkOrder order = null;
         if (workOrderId != null) {
             Optional<WorkOrder> orderOpt = workOrderRepository.findById(workOrderId);
@@ -44,10 +61,10 @@ public class AbnormalEventService {
         event.setEventCode("ABN" + System.currentTimeMillis() + RandomStringUtils.randomNumeric(4));
         event.setWorkOrderId(workOrderId);
         event.setOrderCode(order != null ? order.getOrderCode() : null);
-        event.setElderId(order != null ? order.getElderId() : null);
-        event.setElderName(order != null ? order.getElderName() : null);
-        event.setNurseId(order != null ? order.getNurseId() : null);
-        event.setNurseName(order != null ? order.getNurseName() : null);
+        event.setElderId(order != null ? order.getElderId() : elderId);
+        event.setElderName(order != null ? order.getElderName() : elderName);
+        event.setNurseId(order != null ? order.getNurseId() : nurseId);
+        event.setNurseName(order != null ? order.getNurseName() : nurseName);
         event.setAbnormalType(type);
         event.setStatus(AbnormalStatus.PENDING);
         event.setDescription(description);
@@ -58,10 +75,14 @@ public class AbnormalEventService {
         event.setAutoDetected(autoDetected);
 
         event = abnormalEventRepository.save(event);
-        auditLogService.logAbnormal(event.getId(), event.getEventCode(),
-                "CREATE_ABNORMAL", "SYSTEM", null, event.toString());
-        log.warn("异常事件已创建: eventCode={}, type={}, workOrderId={}, description={}",
-                event.getEventCode(), type, workOrderId, description);
+        try {
+            auditLogService.logAbnormal(event.getId(), event.getEventCode(),
+                    "CREATE_ABNORMAL", "SYSTEM", null, event.toString());
+        } catch (Exception e) {
+            log.warn("记录审计日志失败(不影响异常事件): {}", e.getMessage());
+        }
+        log.warn("异常事件已创建: eventCode={}, type={}, workOrderId={}, elder={}, nurse={}, description={}",
+                event.getEventCode(), type, workOrderId, event.getElderName(), event.getNurseName(), description);
         return event;
     }
 

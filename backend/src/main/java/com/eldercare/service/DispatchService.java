@@ -62,13 +62,24 @@ public class DispatchService {
                 errorMsg.append(i + 1).append(". ").append(validation.getErrorMessages().get(i)).append("\n");
             }
 
-            for (AbnormalType type : validation.getAbnormalTypes()) {
+            for (int i = 0; i < validation.getAbnormalTypes().size(); i++) {
+                AbnormalType type = validation.getAbnormalTypes().get(i);
                 String severity = type == AbnormalType.ELDER_PAUSED
                         || type == AbnormalType.QUALIFICATION_MISMATCH
                         || type == AbnormalType.RISK_LEVEL_MISMATCH ? "CRITICAL" : "MEDIUM";
-                abnormalEventService.createAbnormal(null, type,
-                        "派单前置校验拦截: " + validation.getErrorMessages().get(0),
-                        severity, true);
+                String errDesc = i < validation.getErrorMessages().size()
+                        ? validation.getErrorMessages().get(i)
+                        : validation.getErrorMessages().get(0);
+                try {
+                    abnormalEventService.createAbnormalWithInfo(
+                            null, demand.getElderId(), elder.getName(),
+                            dto.getNurseId(), nurse.getName(),
+                            type, "派单前置校验拦截: " + errDesc,
+                            severity, true);
+                } catch (Exception e) {
+                    log.error("创建异常事件失败(派单校验拦截): type={}, elder={}, nurse={}",
+                            type, elder.getName(), nurse.getName(), e);
+                }
             }
 
             throw new BusinessException(errorMsg.toString(), validation.getErrorMessages(), 400);
