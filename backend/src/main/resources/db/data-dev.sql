@@ -116,3 +116,105 @@ SELECT n.id, d.dow, '09:00:00', '17:00:00', 4, 8, 1, TRUE, '周末减半排班',
 FROM nurse n
 CROSS JOIN (VALUES ('SATURDAY'), ('SUNDAY')) AS d(dow)
 WHERE n.status = 'ACTIVE';
+
+-- ============================================
+-- 9. 老人服务包账户 (elder_service_package)
+-- ============================================
+MERGE INTO elder_service_package (id, account_code, elder_id, elder_name, service_package_id, service_package_name,
+    package_type, total_sessions, used_sessions, remaining_sessions,
+    total_minutes, used_minutes, remaining_minutes,
+    total_amount, used_amount, remaining_amount,
+    effective_date, expiry_date, purchase_date, purchase_channel,
+    status, pause_start_time, pause_end_time, pause_reason, paused_days,
+    remark, created_at, updated_at, deleted) KEY(id) VALUES
+(1, 'ESP202401001', 1, '张桂兰', 3, '生活照护-个人卫生', 'LONG_TERM',
+    30, 5, 25,
+    2700, 450, 2250,
+    4500.00, 750.00, 3750.00,
+    '2024-01-01', '2024-12-31', '2024-01-01 10:00:00', 'OFFLINE',
+    'ACTIVE', NULL, NULL, NULL, 0,
+    '年度套餐：30次/2700分钟/4500元，每周3次上门服务', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(2, 'ESP202401002', 2, '王建国', 5, '医学护理-压疮护理', 'LONG_TERM',
+    60, 12, 48,
+    3600, 720, 2880,
+    16800.00, 3360.00, 13440.00,
+    '2024-01-01', '2024-12-31', '2024-01-01 14:00:00', 'ONLINE',
+    'ACTIVE', NULL, NULL, NULL, 0,
+    '季度套餐：60次/3600分钟/16800元，每周5次压疮护理', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(3, 'ESP202401003', 3, '刘淑珍', 1, '日常家政清洁', 'LONG_TERM',
+    12, 3, 9,
+    1440, 360, 1080,
+    1440.00, 360.00, 1080.00,
+    '2024-01-15', '2024-07-15', '2024-01-15 09:30:00', 'OFFLINE',
+    'PAUSED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '14' DAY, '膝关节置换手术暂停', 14,
+    '半年套餐：12次/1440分钟，手术期间暂停，有效期顺延', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(4, 'ESP202401004', 4, '赵振华', 7, '夜间陪护', 'LONG_TERM',
+    90, 25, 65,
+    43200, 12000, 31200,
+    54000.00, 15000.00, 39000.00,
+    '2024-01-01', '2024-12-31', '2024-01-01 16:00:00', 'OFFLINE',
+    'ACTIVE', NULL, NULL, NULL, 0,
+    '季度套餐：90次夜间陪护，每晚8小时', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(5, 'ESP202401005', 5, '孙秀芬', 2, '助餐服务', 'LONG_TERM',
+    20, 8, 12,
+    1200, 480, 720,
+    1200.00, 480.00, 720.00,
+    '2024-02-01', '2025-01-31', '2024-02-01 11:00:00', 'ONLINE',
+    'ACTIVE', NULL, NULL, NULL, 0,
+    '年度助餐套餐：20次/1200分钟，每日午餐配送', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE);
+
+-- ============================================
+-- 10. 服务包余额变动日志 (package_balance_log)
+-- ============================================
+MERGE INTO package_balance_log (id, log_code, elder_service_package_id, account_code,
+    elder_id, elder_name, service_package_id, service_package_name,
+    change_type, change_reason, work_order_id, order_code,
+    abnormal_event_id, event_code,
+    before_sessions, change_sessions, after_sessions,
+    before_minutes, change_minutes, after_minutes,
+    before_amount, change_amount, after_amount,
+    operator_name, operated_at, remark, created_at, updated_at, deleted) KEY(id) VALUES
+(1, 'PBL20240100101', 1, 'ESP202401001', 1, '张桂兰', 3, '生活照护-个人卫生',
+    'PURCHASE', '购买套餐', NULL, NULL, NULL, NULL,
+    0, 30, 30,
+    0, 2700, 2700,
+    0.00, 4500.00, 4500.00,
+    'admin', '2024-01-01 10:00:00', '首次购买年度套餐', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(2, 'PBL20240100201', 2, 'ESP202401002', 2, '王建国', 5, '医学护理-压疮护理',
+    'PURCHASE', '购买套餐', NULL, NULL, NULL, NULL,
+    0, 60, 60,
+    0, 3600, 3600,
+    0.00, 16800.00, 16800.00,
+    'admin', '2024-01-01 14:00:00', '购买季度压疮护理套餐', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(3, 'PBL20240100102', 1, 'ESP202401001', 1, '张桂兰', 3, '生活照护-个人卫生',
+    'DEDUCT', '服务完成扣减', 1, 'WO202401001', NULL, NULL,
+    29, -1, 28,
+    2610, -90, 2520,
+    4350.00, -150.00, 4200.00,
+    'system', '2024-01-05 11:30:00', '正常服务完成', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE);
+
+-- ============================================
+-- 11. 护理员请假 (nurse_leave)
+-- ============================================
+MERGE INTO nurse_leave (id, leave_code, nurse_id, nurse_name, leave_type,
+    start_date, end_date, start_time, end_time, total_days, total_hours,
+    reason, status, approved_by, approved_at,
+    reassignment_count, remark, created_at, updated_at, deleted) KEY(id) VALUES
+(1, 'NLV202401001', 1, '李红英', 'SICK_LEAVE',
+    '2024-01-20', '2024-01-22', '09:00:00', '18:00:00', 3, 24,
+    '感冒发烧，医生建议休息3天', 'APPROVED', 'admin', '2024-01-19 16:30:00',
+    5, '已安排护理员王桂芳顶替', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(2, 'NLV202401002', 3, '张秀兰', 'ANNUAL_LEAVE',
+    '2024-02-01', '2024-02-07', '00:00:00', '23:59:59', 7, 56,
+    '回老家过年，提前申请年假', 'PENDING_APPROVAL', NULL, NULL,
+    0, '等待主管审批', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE),
+(3, 'NLV202401003', 2, '王桂芳', 'PERSONAL_LEAVE',
+    '2024-01-25', '2024-01-25', '09:00:00', '18:00:00', 1, 8,
+    '家中有事，需请假一天处理', 'APPROVED', 'admin', '2024-01-23 10:00:00',
+    2, '已安排调班', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, FALSE);
+
+-- ============================================
+-- 12. 结算复核队列 (settlement_review_queue)
+-- ============================================
+-- 由于需要关联已存在的结算单，这里先不插入演示数据
+-- 实际使用时会通过触发条件自动加入复核队列

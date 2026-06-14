@@ -29,6 +29,9 @@ public class DispatchValidationService {
     private final WorkOrderRepository workOrderRepository;
     private final CheckInRepository checkInRepository;
     private final NurseScheduleCapacityRepository scheduleCapacityRepository;
+    private final ContraindicationRepository contraindicationRepository;
+    private final NurseLeaveRepository nurseLeaveRepository;
+    private final ElderServicePackageRepository elderPackageRepository;
 
     public DispatchValidationResult validateDispatch(Long elderId, Long nurseId,
                                                      Long servicePackageId,
@@ -75,6 +78,10 @@ public class DispatchValidationService {
         validateScheduleCapacity(nurse, scheduledDate, startTime, endTime, result);
 
         validateContinuousHours(nurse, scheduledDate, startTime, endTime, result);
+
+        validateNurseLeave(nurse, scheduledDate, startTime, endTime, result);
+
+        validateContraindications(elder, nurse, servicePackage, result);
 
         return result;
     }
@@ -360,6 +367,78 @@ public class DispatchValidationService {
         }
         maxBlock = Math.max(maxBlock, currentEnd - currentStart);
         return maxBlock;
+    }
+
+    private void validateNurseLeave(Nurse nurse, LocalDate date,
+                                     LocalTime startTime, LocalTime endTime,
+                                     DispatchValidationResult result) {
+        List<com.eldercare.entity.NurseLeave> leaves = nurseLeaveRepository
+                .findByNurseIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        nurse.getId(), date, date);
+
+        if (leaves == null || leaves.isEmpty()) {
+            return;
+        }
+
+        for (com.eldercare.entity.NurseLeave leave : leaves) {
+            if (!"APPROVED".equals(leave.getStatus()) && !"ACTIVE".equals(leave.getStatus())) {
+                continue;
+            }
+
+            boolean timeOverlap = true;
+            if (leave.getStartTime() != null && leave.getEndTime() != null) {
+                timeOverlap = !(endTime.isBefore(leave.getStartTime())
+                        || startTime.isAfter(leave.getEndTime()));
+            }
+
+            if (timeOverlap) {
+                result.addError("护理员【" + nurse.getName() + "】在 " + date
+                                + " 有请假记录：" + leave.getLeaveType()
+                                + "（" + (leave.getStartTime() != null ? leave.getStartTime() : "全天")
+                                + "-" + (leave.getEndTime() != null ? leave.getEndTime() : "全天") + "），原因："
+                                + (leave.getReason() != null ? leave.getReason() : "未填写"),
+                        AbnormalType.NURSE_LEAVE);
+                break;
+            }
+        }
+    }
+
+    private void validateContraindications(Elder elder, Nurse nurse,
+                                            ServicePackage servicePackage,
+                                            DispatchValidationResult result) {
+        String contraindicationIds = elder.getContraindicationIds();
+        if (contraindicationIds == null || contraindicationIds.isEmpty()) {
+            return;
+        }
+
+        Set<String> nurseQualifications = getNurseValidQualifications(nurse.getId());
+
+        String[] ids = contraindicationIds.split(",");
+        for (String idStr : ids) {
+            try {
+                Long id = Long.parseLong(idStr.trim());
+                com.eldercare.entity.Contraindication contra = contraindicationRepository
+                        .findById(id).orElse(null);
+                if (contra == null) continue;
+
+                String excludedQuals = contra.getExcludedQualifications();
+                if (excludedQuals != null && !excludedQuals.isEmpty()) {
+                    for (String excludedQual : excludedQuals.split(",")) {
+                        excludedQual = excludedQual.trim();
+                        if (!excludedQual.isEmpty() && nurseQualifications.contains(excludedQual)) {
+                            result.addError("护理员【" + nurse.getName()
+                                            + "】资质【" + translateQualification(excludedQual)
+                                            + "】与老人禁忌事项【" + contra.getName() + "】冲突，注意事项："
+                                            + (contra.getHandlingNotes() != null ? contra.getHandlingNotes() : "无"),
+                                    AbnormalType.CONTRAINDICATION_MISMATCH);
+                            return;
+                        }
+                    }
+                }
+            } catch (NumberFormatException e) {
+                log.warn("禁忌事项ID格式错误: {}", idStr);
+            }
+        }
     }
 
     public List<NurseCandidateVO> findCandidateNurses(Long elderId, Long servicePackageId,

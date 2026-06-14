@@ -38,6 +38,9 @@ public class SettlementService {
     private final CompensationRepository compensationRepository;
     private final InsuranceClaimRepository insuranceClaimRepository;
     private final AuditLogService auditLogService;
+    private final PackageBalanceService packageBalanceService;
+    private final SettlementReviewService settlementReviewService;
+    private final SettlementSourceService settlementSourceService;
 
     @Transactional
     public Settlement createSettlement(SettlementCreateDTO dto) {
@@ -156,6 +159,25 @@ public class SettlementService {
         order.setStatus(OrderStatus.PENDING_SETTLEMENT);
         workOrderRepository.save(order);
 
+        try {
+            packageBalanceService.deductBalance(order.getId(), actualMinutes, baseAmount,
+                    settlement.getSettledBy());
+        } catch (Exception e) {
+            log.warn("服务包余额扣减失败，继续结算流程: orderId={}, error={}", order.getId(), e.getMessage());
+        }
+
+        try {
+            settlementSourceService.generateSettlementSources(settlement.getId());
+        } catch (Exception e) {
+            log.warn("生成结算来源明细失败: settlementId={}, error={}", settlement.getId(), e.getMessage());
+        }
+
+        try {
+            settlementReviewService.autoAddToReviewQueue(settlement);
+        } catch (Exception e) {
+            log.warn("自动加入复核队列失败: settlementId={}, error={}", settlement.getId(), e.getMessage());
+        }
+
         auditLogService.logSettlement(settlement.getId(), settlement.getSettlementCode(),
                 "CREATE_SETTLEMENT", settlement.getSettledBy(), null, settlement.toString());
         auditLogService.logWorkOrder(order.getId(), order.getOrderCode(),
@@ -171,6 +193,14 @@ public class SettlementService {
     public Settlement approveSettlement(Long settlementId, String approver, String remark) {
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new IllegalArgumentException("结算单不存在: " + settlementId));
+
+        Optional<SettlementReviewQueue> reviewOpt = settlementReviewService.findBySettlementId(settlementId);
+        if (reviewOpt.isPresent() && "PENDING_REVIEW".equals(reviewOpt.get().getStatus())) {
+            throw new BusinessException(
+                    "该结算单【" + settlement.getSettlementCode() + "】当前处于复核队列中，不能直接结算。"
+                            + "请先完成复核流程后再进行结算审批。复核触发原因：" + reviewOpt.get().getReviewTriggerType(),
+                    400);
+        }
 
         String before = settlement.toString();
         settlement.setStatus("SETTLED");

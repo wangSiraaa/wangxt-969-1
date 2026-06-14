@@ -76,6 +76,27 @@ public class AuditLogService {
         log(operation, "ABNORMAL_EVENT", abnormalId, eventCode, operator, beforeData, afterData, null);
     }
 
+    @Async
+    @Transactional
+    public void logElderPackage(Long packageId, String accountCode, String operation,
+                                String operator, String beforeData, String afterData) {
+        log(operation, "ELDER_PACKAGE", packageId, accountCode, operator, beforeData, afterData, null);
+    }
+
+    @Async
+    @Transactional
+    public void logSettlementReview(Long reviewId, String reviewCode, String operation,
+                                     String operator, String beforeData, String afterData) {
+        log(operation, "SETTLEMENT_REVIEW", reviewId, reviewCode, operator, beforeData, afterData, null);
+    }
+
+    @Async
+    @Transactional
+    public void logNurseLeave(Long leaveId, String leaveCode, String operation,
+                              String operator, String beforeData, String afterData) {
+        log(operation, "NURSE_LEAVE", leaveId, leaveCode, operator, beforeData, afterData, null);
+    }
+
     public List<AuditLog> findByBusiness(String module, Long businessId) {
         return auditLogRepository.findByModuleAndBusinessIdOrderByOperatedAtDesc(module, businessId);
     }
