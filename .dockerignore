@@ -1,0 +1,16 @@
+*.class
+*.log
+*.ctxt
+.idea
+.vscode
+*.iml
+target
+dist
+node_modules
+.DS_Store
+*.swp
+*.swo
+*~
+.mvn
+mvnw
+mvnw.cmd

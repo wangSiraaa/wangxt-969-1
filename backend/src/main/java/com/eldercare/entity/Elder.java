@@ -1,80 +1,108 @@
 package com.eldercare.entity;
 
-import com.eldercare.enums.ElderStatus;
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import com.eldercare.common.entity.BaseEntity;
+import com.eldercare.common.enums.ElderStatus;
+import com.eldercare.common.enums.Gender;
+import com.eldercare.common.enums.RiskLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
+import javax.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Data
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "elder")
-public class Elder {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Elder extends BaseEntity {
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "elder_code", unique = true, nullable = false)
+    private String elderCode;
+
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(length = 20)
+    @Column(name = "id_card", unique = true)
     private String idCard;
 
-    @Column(length = 20)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender")
+    private Gender gender;
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
+    @Column(name = "phone")
     private String phone;
 
-    @Column(length = 200)
+    @Column(name = "address")
     private String address;
 
-    @Column(length = 50)
-    private String emergencyContact;
+    @Column(name = "longitude", precision = 12, scale = 8)
+    private BigDecimal longitude;
 
-    @Column(length = 20)
-    private String emergencyPhone;
+    @Column(name = "latitude", precision = 12, scale = 8)
+    private BigDecimal latitude;
 
-    @Column(length = 500)
-    private String healthCondition;
+    @Column(name = "service_area")
+    private String serviceArea;
+
+    @Column(name = "nursing_level_id")
+    private Long nursingLevelId;
+
+    @Column(name = "service_package_id")
+    private Long servicePackageId;
+
+    @Column(name = "health_status", columnDefinition = "TEXT")
+    private String healthStatus;
+
+    @Column(name = "allergies")
+    private String allergies;
+
+    @Column(name = "contraindication_ids")
+    private String contraindicationIds;
+
+    @Column(name = "emergency_contacts")
+    private String emergencyContacts;
+
+    @Column(name = "insurant_no")
+    private String insurantNo;
+
+    @Column(name = "insurance_type")
+    private String insuranceType;
+
+    @Column(name = "insurance_coverage", precision = 12, scale = 2)
+    private BigDecimal insuranceCoverage;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private ElderStatus status = ElderStatus.ACTIVE;
+    @Column(name = "status")
+    private ElderStatus status;
 
-    @Column(length = 500)
-    private String suspendReason;
+    @Column(name = "pause_start_time")
+    private LocalDateTime pauseStartTime;
 
-    private LocalDateTime suspendTime;
+    @Column(name = "pause_end_time")
+    private LocalDateTime pauseEndTime;
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createTime;
+    @Column(name = "pause_reason")
+    private String pauseReason;
 
-    @UpdateTimestamp
-    private LocalDateTime updateTime;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "risk_level")
+    private RiskLevel riskLevel;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getIdCard() { return idCard; }
-    public void setIdCard(String idCard) { this.idCard = idCard; }
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-    public String getEmergencyContact() { return emergencyContact; }
-    public void setEmergencyContact(String emergencyContact) { this.emergencyContact = emergencyContact; }
-    public String getEmergencyPhone() { return emergencyPhone; }
-    public void setEmergencyPhone(String emergencyPhone) { this.emergencyPhone = emergencyPhone; }
-    public String getHealthCondition() { return healthCondition; }
-    public void setHealthCondition(String healthCondition) { this.healthCondition = healthCondition; }
-    public ElderStatus getStatus() { return status; }
-    public void setStatus(ElderStatus status) { this.status = status; }
-    public String getSuspendReason() { return suspendReason; }
-    public void setSuspendReason(String suspendReason) { this.suspendReason = suspendReason; }
-    public LocalDateTime getSuspendTime() { return suspendTime; }
-    public void setSuspendTime(LocalDateTime suspendTime) { this.suspendTime = suspendTime; }
-    public LocalDateTime getCreateTime() { return createTime; }
-    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
-    public LocalDateTime getUpdateTime() { return updateTime; }
-    public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
+    @Column(name = "credit_score")
+    private Integer creditScore = 100;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Column(name = "remark", columnDefinition = "TEXT")
+    private String remark;
 }

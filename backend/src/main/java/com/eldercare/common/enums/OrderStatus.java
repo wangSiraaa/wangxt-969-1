@@ -1,0 +1,18 @@
+package com.eldercare.common.enums;
+
+public enum OrderStatus {
+    DRAFT,
+    PENDING_DISPATCH,
+    DISPATCHED,
+    NURSE_ACCEPTED,
+    IN_PROGRESS,
+    CHECKED_IN,
+    SERVICE_COMPLETED,
+    PENDING_FAMILY_CONFIRM,
+    FAMILY_CONFIRMED,
+    FAMILY_REJECTED,
+    PENDING_SETTLEMENT,
+    SETTLED,
+    CANCELLED,
+    ABNORMAL
+}

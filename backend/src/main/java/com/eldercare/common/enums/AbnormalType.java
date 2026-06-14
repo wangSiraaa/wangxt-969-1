@@ -1,0 +1,16 @@
+package com.eldercare.common.enums;
+
+public enum AbnormalType {
+    SERVICE_TIMEOUT,
+    TEMP_REASSIGN,
+    NO_CHECKOUT,
+    FAMILY_REJECTED,
+    QUALIFICATION_MISMATCH,
+    ELDER_PAUSED,
+    NO_CHECKIN,
+    AREA_MISMATCH,
+    TIME_CONFLICT,
+    CONTINUOUS_HOURS_EXCEEDED,
+    RISK_LEVEL_MISMATCH,
+    OTHER
+}

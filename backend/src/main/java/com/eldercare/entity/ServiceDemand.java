@@ -1,97 +1,96 @@
 package com.eldercare.entity;
 
-import com.eldercare.enums.DemandStatus;
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import com.eldercare.common.entity.BaseEntity;
+import com.eldercare.common.enums.RiskLevel;
+import com.eldercare.common.enums.ServiceType;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "service_demand")
-public class ServiceDemand {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ServiceDemand extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "demand_code", unique = true, nullable = false)
+    private String demandCode;
+
+    @Column(name = "elder_id", nullable = false)
     private Long elderId;
 
-    @Transient
+    @Column(name = "elder_name")
     private String elderName;
 
-    @Column(length = 100)
-    private String applicant;
+    @Column(name = "service_package_id")
+    private Long servicePackageId;
 
-    @Column(length = 20)
-    private String applicantPhone;
-
-    @Column(length = 50)
-    private String relation;
-
-    @Column(nullable = false, length = 100)
-    private String serviceType;
-
-    @Column(nullable = false, length = 500)
-    private String serviceContent;
-
-    @Column(nullable = false)
-    private LocalDateTime expectedTime;
-
-    @Column(length = 200)
-    private String specialRequirement;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal estimatedAmount;
-
-    @Column(length = 100)
-    private String requiredQualifications;
+    @Column(name = "service_package_name")
+    private String servicePackageName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private DemandStatus status = DemandStatus.PENDING_DISPATCH;
+    @Column(name = "service_type")
+    private ServiceType serviceType;
 
-    @Column(length = 500)
+    @Column(name = "nursing_level_code")
+    private String nursingLevelCode;
+
+    @Column(name = "requested_date")
+    private LocalDate requestedDate;
+
+    @Column(name = "requested_start_time")
+    private LocalTime requestedStartTime;
+
+    @Column(name = "requested_end_time")
+    private LocalTime requestedEndTime;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "longitude", precision = 12, scale = 8)
+    private BigDecimal longitude;
+
+    @Column(name = "latitude", precision = 12, scale = 8)
+    private BigDecimal latitude;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "special_requirements", columnDefinition = "TEXT")
+    private String specialRequirements;
+
+    @Column(name = "contraindication_ids")
+    private String contraindicationIds;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "risk_level")
+    private RiskLevel riskLevel;
+
+    @Column(name = "current_version")
+    private Integer currentVersion = 1;
+
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancel_reason")
     private String cancelReason;
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createTime;
+    @Column(name = "submitted_by")
+    private String submittedBy;
 
-    @UpdateTimestamp
-    private LocalDateTime updateTime;
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getElderId() { return elderId; }
-    public void setElderId(Long elderId) { this.elderId = elderId; }
-    public String getElderName() { return elderName; }
-    public void setElderName(String elderName) { this.elderName = elderName; }
-    public String getApplicant() { return applicant; }
-    public void setApplicant(String applicant) { this.applicant = applicant; }
-    public String getApplicantPhone() { return applicantPhone; }
-    public void setApplicantPhone(String applicantPhone) { this.applicantPhone = applicantPhone; }
-    public String getRelation() { return relation; }
-    public void setRelation(String relation) { this.relation = relation; }
-    public String getServiceType() { return serviceType; }
-    public void setServiceType(String serviceType) { this.serviceType = serviceType; }
-    public String getServiceContent() { return serviceContent; }
-    public void setServiceContent(String serviceContent) { this.serviceContent = serviceContent; }
-    public LocalDateTime getExpectedTime() { return expectedTime; }
-    public void setExpectedTime(LocalDateTime expectedTime) { this.expectedTime = expectedTime; }
-    public String getSpecialRequirement() { return specialRequirement; }
-    public void setSpecialRequirement(String specialRequirement) { this.specialRequirement = specialRequirement; }
-    public BigDecimal getEstimatedAmount() { return estimatedAmount; }
-    public void setEstimatedAmount(BigDecimal estimatedAmount) { this.estimatedAmount = estimatedAmount; }
-    public String getRequiredQualifications() { return requiredQualifications; }
-    public void setRequiredQualifications(String requiredQualifications) { this.requiredQualifications = requiredQualifications; }
-    public DemandStatus getStatus() { return status; }
-    public void setStatus(DemandStatus status) { this.status = status; }
-    public String getCancelReason() { return cancelReason; }
-    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
-    public LocalDateTime getCreateTime() { return createTime; }
-    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
-    public LocalDateTime getUpdateTime() { return updateTime; }
-    public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
+    @Column(name = "remark", columnDefinition = "TEXT")
+    private String remark;
 }
